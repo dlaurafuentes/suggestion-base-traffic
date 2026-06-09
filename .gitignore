@@ -1,0 +1,79 @@
+# ── Python (backend) ────────────────────────────────────────────────
+suggestion-base-traffic-api/__pycache__/
+suggestion-base-traffic-api/**/__pycache__/
+suggestion-base-traffic-api/*.py[cod]
+suggestion-base-traffic-api/**/*.py[cod]
+suggestion-base-traffic-api/venv/
+suggestion-base-traffic-api/.venv/
+suggestion-base-traffic-api/*.egg-info/
+suggestion-base-traffic-api/dist/
+suggestion-base-traffic-api/build/
+suggestion-base-traffic-api/**/*.log
+suggestion-base-traffic-api/*.log
+
+# Flask instance folder (production config / secret keys)
+suggestion-base-traffic-api/instance/
+
+# Test & coverage artifacts
+suggestion-base-traffic-api/.pytest_cache/
+suggestion-base-traffic-api/.coverage
+suggestion-base-traffic-api/.coverage.*
+suggestion-base-traffic-api/htmlcov/
+suggestion-base-traffic-api/.mypy_cache/
+suggestion-base-traffic-api/.tox/
+
+# Local databases
+suggestion-base-traffic-api/*.sqlite
+suggestion-base-traffic-api/*.sqlite3
+suggestion-base-traffic-api/*.db
+
+# ── Secrets & environment (backend) ─────────────────────────────────
+suggestion-base-traffic-api/.env
+suggestion-base-traffic-api/.env.*
+!suggestion-base-traffic-api/.env.example
+
+# ── Angular (frontend) ───────────────────────────────────────────────
+suggestion-base-traffic-web/node_modules/
+suggestion-base-traffic-web/dist/
+suggestion-base-traffic-web/.angular/
+suggestion-base-traffic-web/**/*.log
+suggestion-base-traffic-web/*.log
+
+# Production / staging environment files (may contain API keys)
+suggestion-base-traffic-web/src/environments/environment.prod.ts
+suggestion-base-traffic-web/src/environments/environment.staging.ts
+
+# ── Secrets & environment (frontend) ────────────────────────────────
+suggestion-base-traffic-web/.env
+suggestion-base-traffic-web/.env.*
+!suggestion-base-traffic-web/.env.example
+
+# ── Secrets (raíz del repositorio) ──────────────────────────────────
+.env
+.env.*
+!.env.example
+secrets.json
+credentials.json
+service-account*.json
+*.secret
+*.secrets
+
+# ── Certificados y llaves privadas ──────────────────────────────────
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cert
+*.cer
+
+# ── IDE & herramientas ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

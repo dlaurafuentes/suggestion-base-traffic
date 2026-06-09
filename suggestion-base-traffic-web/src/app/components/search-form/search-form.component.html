@@ -1,0 +1,187 @@
+<div class="hero-card mb-4">
+  <h1><i class="bi bi-activity me-2"></i>Popular Traffic Analyzer</h1>
+  <p>
+    Consulta afluencia y tiempos populares de cualquier negocio en tu estado.
+    Datos reales de OpenStreetMap · Overpass · Nominatim.
+  </p>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <div class="row g-3 align-items-end">
+
+      <!-- ── Giro multiselect (required) ─────────────────────── -->
+      <div class="col-lg-4 col-md-12">
+        <label class="form-label">
+          <i class="bi bi-grid me-1"></i> Giro / Tipo de negocio *
+        </label>
+
+        <div class="giro-selector" (click)="$event.stopPropagation()">
+          <!-- Tags row / trigger -->
+          <div
+            class="giro-tags-area"
+            [class.open]="dropdownOpen"
+            [class.is-invalid-custom]="isInvalid('giros')"
+            (click)="dropdownOpen = !dropdownOpen">
+            @for (v of selectedGiros; track v) {
+              <span class="giro-tag">
+                {{ getGiroMeta(v).icon }} {{ getGiroMeta(v).label }}
+                <button type="button" class="giro-tag-remove" (click)="removeGiro(v, $event)">
+                  <i class="bi bi-x"></i>
+                </button>
+              </span>
+            }
+            @if (!selectedGiros.length) {
+              <span class="giro-placeholder">— Uno o más giros —</span>
+            }
+            <i class="bi ms-auto"
+               [class.bi-chevron-up]="dropdownOpen"
+               [class.bi-chevron-down]="!dropdownOpen"></i>
+          </div>
+
+          <!-- Dropdown panel -->
+          @if (dropdownOpen) {
+            <div class="giro-dropdown" (click)="$event.stopPropagation()">
+              <!-- Search input -->
+              <div class="giro-search-wrap">
+                <i class="bi bi-search giro-search-icon"></i>
+                <input
+                  type="text"
+                  class="giro-search"
+                  [value]="giroSearch"
+                  (input)="giroSearch = $any($event.target).value"
+                  placeholder="Buscar giro…"
+                  autocomplete="off" />
+              </div>
+
+              <div class="giro-options">
+                @for (cat of filteredCategories; track cat) {
+                  <div class="giro-category">
+                    <!-- Category header with select-all checkbox -->
+                    <label class="giro-cat-label">
+                      <input
+                        type="checkbox"
+                        [checked]="isCategoryAllSelected(cat)"
+                        [indeterminate]="isCategoryPartialSelected(cat)"
+                        (click)="$event.stopPropagation(); toggleCategory(cat)"
+                        (change)="$event.preventDefault()" />
+                      {{ cat }}
+                      <span class="cat-count">{{ catCount(cat) }}</span>
+                    </label>
+
+                    <!-- Individual giro options -->
+                    @for (g of filteredGirosByCategory(cat); track g.value) {
+                      <label class="giro-option" [class.selected]="isGiroSelected(g.value)">
+                        <input
+                          type="checkbox"
+                          [checked]="isGiroSelected(g.value)"
+                          (click)="$event.stopPropagation(); toggleGiro(g.value)"
+                          (change)="$event.preventDefault()" />
+                        {{ g.icon }} {{ g.label }}
+                      </label>
+                    }
+                  </div>
+                }
+
+                @if (!filteredCategories.length) {
+                  <div class="giro-empty">Sin resultados para "{{ giroSearch }}"</div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (isInvalid('giros')) {
+          <div class="invalid-feedback d-block">Selecciona al menos un giro</div>
+        }
+      </div>
+
+      <!-- ── Estado (required) ──────────────────────────────── -->
+      <div class="col-lg-3 col-md-6 col-12">
+        <label class="form-label" for="estado">
+          <i class="bi bi-map me-1"></i> Estado *
+        </label>
+        <div class="input-group">
+          <select
+            id="estado"
+            formControlName="estado"
+            class="form-select"
+            [class.is-invalid-custom]="isInvalid('estado')">
+            <option value="" disabled>— Selecciona un estado —</option>
+            @for (e of estados; track e) {
+              <option [value]="e">{{ e }}</option>
+            }
+          </select>
+          @if (form.get('estado')?.value) {
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              (click)="form.get('estado')?.setValue('')"
+              title="Limpiar estado">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          }
+        </div>
+        @if (isInvalid('estado')) {
+          <div class="invalid-feedback d-block">Selecciona el estado</div>
+        }
+      </div>
+
+      <!-- ── Ciudad (optional) ──────────────────────────────── -->
+      <div class="col-lg-2 col-md-6 col-12">
+        <label class="form-label" for="ciudad">
+          <i class="bi bi-building me-1"></i>
+          Ciudad <span class="opacity-50">(opcional)</span>
+        </label>
+        <div class="input-group">
+          <input
+            id="ciudad"
+            type="text"
+            formControlName="ciudad"
+            class="form-control"
+            placeholder="Ej: Orizaba…"
+            autocomplete="off" />
+          @if (form.get('ciudad')?.value) {
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              (click)="form.get('ciudad')?.reset()"
+              title="Limpiar ciudad">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- ── Radio (optional) ───────────────────────────────── -->
+      <div class="col-lg-2 col-md-4 col-8">
+        <label class="form-label" for="radio">
+          <i class="bi bi-compass me-1"></i>
+          Radio <span class="opacity-50">(opc.)</span>
+        </label>
+        <div class="input-group">
+          <select id="radio" formControlName="radio" class="form-select">
+            @for (opt of radioOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+          @if (form.get('radio')?.value !== 2000) {
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              (click)="form.get('radio')?.setValue(2000)"
+              title="Restablecer a 2 km">
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- ── Botón ──────────────────────────────────────────── -->
+      <div class="col-lg-1 col-md-2 col-4">
+        <button type="submit" class="btn btn-search w-100" [disabled]="form.invalid">
+          <i class="bi bi-search me-1"></i>
+        </button>
+      </div>
+
+    </div>
+  </form>
+</div>

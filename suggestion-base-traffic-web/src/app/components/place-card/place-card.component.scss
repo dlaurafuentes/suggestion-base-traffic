@@ -1,0 +1,53 @@
+.place-card {
+  border: 2px solid transparent;
+  border-radius: 12px;
+  transition: border-color .15s, box-shadow .15s;
+
+  &.selected {
+    border-color: #4361ee;
+    box-shadow: 0 0 0 3px rgba(67,97,238,.15) !important;
+  }
+}
+
+.place-name {
+  font-weight: 600;
+  font-size: .9rem;
+  line-height: 1.2;
+  max-width: calc(100% - 64px);
+}
+
+.crowd-badge {
+  font-weight: 700;
+  font-size: .82rem;
+  padding: .25rem .6rem;
+  border-radius: 10px;
+  white-space: nowrap;
+
+  &.badge-high   { background: #fde8eb; color: #ef233c; }
+  &.badge-medium { background: #fef3e2; color: #d97706; }
+  &.badge-low    { background: #e6f4f1; color: #2a9d8f; }
+}
+
+.progress-bar {
+  &.bar-high   { background: #ef233c; }
+  &.bar-medium { background: #f4a261; }
+  &.bar-low    { background: #2a9d8f; }
+}
+
+.place-addr {
+  font-size: .78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge-tag {
+  font-size: .72rem;
+  font-weight: 600;
+  padding: .2rem .55rem;
+  border-radius: 8px;
+
+  &.danger  { background: #fde8eb; color: #ef233c; }
+  &.warning { background: #fef3e2; color: #d97706; }
+  &.info    { background: #e0e7ff; color: #4361ee; }
+}

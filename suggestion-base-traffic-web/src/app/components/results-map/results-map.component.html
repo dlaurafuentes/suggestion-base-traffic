@@ -1,0 +1,39 @@
+<div class="map-wrapper card shadow-sm">
+  <div #mapContainer class="leaflet-map"></div>
+
+  <!-- Drawing controls overlay -->
+  <div class="map-draw-controls">
+    @if (!drawingMode && !hasGeofence) {
+      <button type="button" class="draw-btn shadow-sm"
+        (click)="startDrawing()"
+        title="Dibujar geocerca — el mapa buscará solo dentro del área">
+        <i class="bi bi-pentagon me-1"></i>Geocerca
+      </button>
+    }
+
+    @if (drawingMode) {
+      <span class="draw-hint">
+        <i class="bi bi-cursor me-1"></i>
+        {{ drawPoints.length }} punto{{ drawPoints.length !== 1 ? 's' : '' }}
+      </span>
+      @if (drawPoints.length >= 3) {
+        <button type="button" class="draw-btn success me-1" (click)="completeDrawing()">
+          <i class="bi bi-check-lg me-1"></i>Completar
+        </button>
+      }
+      <button type="button" class="draw-btn danger" (click)="cancelDrawing()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    }
+
+    @if (hasGeofence && !drawingMode) {
+      <span class="draw-active">
+        <i class="bi bi-pentagon-fill me-1"></i>Geocerca activa
+      </span>
+      <button type="button" class="draw-btn danger ms-2" (click)="clearGeofence()"
+        title="Eliminar geocerca">
+        <i class="bi bi-trash"></i>
+      </button>
+    }
+  </div>
+</div>

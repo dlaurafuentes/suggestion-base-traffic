@@ -1,0 +1,100 @@
+// Global styles — overrides and utilities on top of Bootstrap 5
+
+:root {
+  --sbт-primary:   #4361ee;
+  --sbт-danger:    #ef233c;
+  --sbт-warning:   #f4a261;
+  --sbт-success:   #2a9d8f;
+  --sbт-bg:        #f0f2f5;
+  --sbт-card:      #ffffff;
+  --sbт-text:      #212529;
+  --sbт-muted:     #6c757d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--sbт-bg);
+  color: var(--sbт-text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+// ── Leaflet map ──────────────────────────────────────────────
+.leaflet-container {
+  font-family: inherit !important;
+}
+
+// ── Crowd colour coding ──────────────────────────────────────
+.crowd-high    { color: var(--sbт-danger)  !important; }
+.crowd-medium  { color: var(--sbт-warning) !important; }
+.crowd-low     { color: var(--sbт-success) !important; }
+
+.bg-crowd-high    { background: var(--sbт-danger) !important;   color: #fff !important; }
+.bg-crowd-medium  { background: var(--sbт-warning) !important;  color: #fff !important; }
+.bg-crowd-low     { background: var(--sbт-success) !important;  color: #fff !important; }
+
+// ── Card hover effect ─────────────────────────────────────────
+.card-hover {
+  transition: transform .18s ease, box-shadow .18s ease;
+  cursor: pointer;
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+  }
+}
+
+// ── Stat chip ─────────────────────────────────────────────────
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .35rem .8rem;
+  border-radius: 20px;
+  font-size: .82rem;
+  font-weight: 600;
+  background: rgba(67,97,238,.1);
+  color: var(--sbт-primary);
+}
+
+// ── Popular times bar chart ───────────────────────────────────
+.pt-bar-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 80px;
+}
+
+.pt-bar {
+  flex: 1;
+  background: var(--sbт-primary);
+  opacity: .65;
+  border-radius: 2px 2px 0 0;
+  transition: background .2s;
+  min-height: 2px;
+
+  &.current-hour {
+    background: var(--sbт-danger);
+    opacity: 1;
+  }
+}
+
+// ── Spinner overlay ───────────────────────────────────────────
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1rem;
+  color: var(--sbт-muted);
+}
+
+// ── Scrollable place list ────────────────────────────────────
+.place-list {
+  max-height: 520px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+}

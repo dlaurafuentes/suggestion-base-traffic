@@ -1,0 +1,143 @@
+// ── Navbar ─────────────────────────────────────────────────────────
+.navbar {
+  background: linear-gradient(135deg, #2b2d42 0%, #1a1a2e 100%) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+  padding: .75rem 1.5rem;
+}
+
+.navbar-brand {
+  font-size: 1.2rem;
+  letter-spacing: .02em;
+}
+
+// ── Summary bar ────────────────────────────────────────────────────
+.summary-bar {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .35rem .85rem;
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: 600;
+
+  &.chip-primary { background: #e0e7ff; color: #4361ee; }
+  &.chip-muted   { background: #f1f3f5; color: #495057; }
+  &.chip-danger  { background: #fde8eb; color: #ef233c; }
+  &.chip-warning { background: #fef3e2; color: #d97706; }
+  &.chip-success { background: #e6f4f1; color: #2a9d8f; }
+}
+
+// ── Recommendation card ─────────────────────────────────────────────
+.rec-card {
+  background: linear-gradient(135deg, #e8f4ff 0%, #f0f4ff 100%);
+  border: 1px solid #c7d9f5;
+  font-size: .85rem;
+}
+
+.rec-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .35rem;
+  flex: 1 1 240px;
+  min-width: 0;
+
+  > i { flex-shrink: 0; margin-top: .1rem; }
+
+  &.rec-best  > i { color: #198754; }
+  &.rec-quiet > i { color: #4361ee; }
+  &.rec-hot   > i { color: #ef233c; }
+}
+
+// ── Filter bar ─────────────────────────────────────────────────────
+.filter-bar {
+  background: #fff;
+  border-radius: 12px;
+  padding: .6rem 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+// ── Hour selector bar ───────────────────────────────────────────────
+.hour-bar {
+  display: flex;
+  gap: .25rem;
+  overflow-x: auto;
+  padding-bottom: .3rem;
+  scrollbar-width: thin;
+  scrollbar-color: #c0c5d0 transparent;
+
+  // Hide scrollbar on WebKit but keep scroll functional
+  &::-webkit-scrollbar { height: 4px; }
+  &::-webkit-scrollbar-thumb { background: #c0c5d0; border-radius: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+}
+
+.btn-hour {
+  flex-shrink: 0;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 .35rem;
+  border-radius: 8px;
+  border: 1.5px solid #dee2e6;
+  background: #fff;
+  color: #495057;
+  font-size: .75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .14s;
+  line-height: 1;
+
+  &:hover { border-color: #4361ee; color: #4361ee; background: #f0f3ff; }
+
+  &.active {
+    background: #4361ee;
+    border-color: #4361ee;
+    color: #fff;
+  }
+
+  &.high:not(.active) {
+    border-color: #ef233c;
+    color: #ef233c;
+    background: #fff5f7;
+  }
+
+  &.active.high {
+    background: #ef233c;
+    border-color: #ef233c;
+  }
+}
+
+// ── Place list card ─────────────────────────────────────────────────
+.place-list {
+  max-height: 480px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c0c5d0 transparent;
+}
+
+// ── Footer ─────────────────────────────────────────────────────────
+.footer {
+  background: #fff;
+  border-top: 1px solid #dee2e6;
+  a { color: #4361ee; text-decoration: none; &:hover { text-decoration: underline; } }
+}
+
+// ── Responsive ─────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .summary-bar .chip { font-size: .74rem; padding: .25rem .6rem; }
+  .filter-bar { padding: .5rem .75rem; font-size: .85rem; }
+  .hour-bar { gap: .18rem; }
+  .btn-hour { min-width: 30px; height: 30px; font-size: .7rem; }
+}
+
+@media (max-width: 576px) {
+  .rec-item { flex: 1 1 100%; }
+  .place-list { max-height: 340px; }
+  .summary-bar .ms-auto { margin-left: auto !important; }
+}

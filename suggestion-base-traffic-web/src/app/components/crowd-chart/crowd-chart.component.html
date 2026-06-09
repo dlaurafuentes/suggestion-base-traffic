@@ -1,0 +1,91 @@
+<div class="chart-card card shadow-sm mt-3">
+  <div class="card-body">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+      <div>
+        <h5 class="mb-0 fw-bold">{{ place.name }}</h5>
+        @if (place.address) {
+          <div class="text-muted small"><i class="bi bi-geo-alt me-1"></i>{{ place.address }}</div>
+        }
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="crowd-now-badge" [style.background]="crowdColor">
+          {{ place.current_popularity }}% ahora
+        </span>
+        <span class="tag-label">{{ crowdLabel }}</span>
+      </div>
+    </div>
+
+    <!-- Metrics row -->
+    <div class="row g-2 mb-3">
+      <div class="col-6 col-md-3">
+        <div class="metric-box">
+          <div class="metric-val" [style.color]="crowdColor">{{ place.current_popularity }}%</div>
+          <div class="metric-lbl">Actual</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="metric-box">
+          <div class="metric-val text-secondary">{{ place.usual_popularity }}%</div>
+          <div class="metric-lbl">Habitual</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="metric-box">
+          <div class="metric-val" [class.text-danger]="place.crowd_ratio > 1.2" [class.text-success]="place.crowd_ratio <= 0.8">
+            ×{{ place.crowd_ratio | number:'1.1-1' }}
+          </div>
+          <div class="metric-lbl">Ratio actual/habitual</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="metric-box">
+          <div class="metric-val"
+            [class.text-danger]="place.crowd_change > 10"
+            [class.text-success]="place.crowd_change < -10"
+            [class.text-secondary]="place.crowd_change >= -10 && place.crowd_change <= 10">
+            {{ place.crowd_change >= 0 ? '+' : '' }}{{ place.crowd_change }}%
+          </div>
+          <div class="metric-lbl">Cambio 15 min</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tags -->
+    @if (place.is_high_crowd || place.is_gaining_crowd) {
+      <div class="d-flex gap-2 mb-3 flex-wrap">
+        @if (place.is_high_crowd) {
+          <span class="alert-pill danger"><i class="bi bi-people-fill me-1"></i>Alta concurrencia (&gt;50%)</span>
+        }
+        @if (place.is_gaining_crowd) {
+          <span class="alert-pill warning"><i class="bi bi-graph-up me-1"></i>Ganando afluencia</span>
+        }
+      </div>
+    }
+
+    <!-- Day selector -->
+    <div class="day-tabs mb-2">
+      @for (d of dayNames; track d; let i = $index) {
+        <button
+          type="button"
+          class="day-btn"
+          [class.active]="i === selectedDay"
+          (click)="selectDay(i)">
+          {{ d }}
+        </button>
+      }
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-wrap">
+      <canvas #chartCanvas></canvas>
+    </div>
+
+    <div class="chart-hint">
+      <span class="dot primary"></span> Habitual &nbsp;
+      <span class="dot danger"></span> Hora actual
+    </div>
+
+  </div>
+</div>

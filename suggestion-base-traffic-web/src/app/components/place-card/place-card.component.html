@@ -1,0 +1,95 @@
+<div
+  class="place-card card card-hover mb-2"
+  [class.selected]="selected"
+  (click)="cardClicked.emit(place)">
+
+  <div class="card-body p-3">
+    <div class="d-flex justify-content-between align-items-start mb-1">
+      <div class="place-name">{{ place.name }}</div>
+      <span
+        class="crowd-badge badge-{{ crowdClass }}"
+        data-bs-toggle="tooltip" data-bs-placement="top" title="Afluencia actual estimada: 0% = vacío · 100% = lleno total">
+        {{ place.current_popularity }}%
+      </span>
+    </div>
+
+    @if (place.address) {
+      <div class="place-addr text-muted small mb-2">
+        <i class="bi bi-geo-alt me-1"></i>{{ place.address }}
+      </div>
+    }
+
+    <!-- Progress bar -->
+    <div
+      class="progress mb-2"
+      style="height:6px;border-radius:4px"
+      data-bs-toggle="tooltip" data-bs-placement="top" title="Barra de afluencia actual (rojo = alta, naranja = media, verde = baja)">
+      <div
+        class="progress-bar bar-{{ crowdClass }}"
+        [style.width.%]="place.current_popularity"
+        role="progressbar"></div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+      <span
+        class="small"
+        data-bs-toggle="tooltip" data-bs-placement="top" title="Cambio de afluencia en los últimos 15 minutos (▲ sube · ▼ baja)">
+        <i class="bi {{ changeIcon }} me-1"></i>
+        {{ changeText }} últimos 15 min
+      </span>
+      <span class="small text-muted">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Afluencia típica para este día y hora (promedio histórico)">
+          Habitual: {{ place.usual_popularity }}%
+        </span>
+        ·
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Ratio actual ÷ habitual. >1 = más concurrido de lo normal; <1 = menos">
+          ×{{ place.crowd_ratio | number:'1.1-1' }}
+        </span>
+      </span>
+    </div>
+
+    <!-- Extra metrics row -->
+    <div class="d-flex gap-3 mt-2 flex-wrap">
+      @if (place.rating) {
+        <span
+          class="small"
+          data-bs-toggle="tooltip" data-bs-placement="top" title="Valoración estimada del lugar (basada en tipo de negocio y popularidad)">
+          <i class="bi bi-star-fill text-warning me-1"></i>{{ place.rating | number:'1.1-1' }}
+        </span>
+      }
+      @if (place.time_spent) {
+        <span
+          class="small text-muted"
+          data-bs-toggle="tooltip" data-bs-placement="top" title="Tiempo promedio que los visitantes pasan en el lugar">
+          <i class="bi bi-clock me-1"></i>~{{ place.time_spent }} min
+        </span>
+      }
+      @if (place.wait_time) {
+        <span
+          class="small text-muted"
+          data-bs-toggle="tooltip" data-bs-placement="top" title="Tiempo estimado de espera dado el nivel de afluencia actual">
+          <i class="bi bi-hourglass-split me-1"></i>Espera ~{{ place.wait_time }} min
+        </span>
+      }
+    </div>
+
+    @if (place.is_high_crowd || place.is_gaining_crowd) {
+      <div class="mt-2 d-flex gap-1 flex-wrap">
+        @if (place.is_high_crowd) {
+          <span
+            class="badge-tag danger"
+            data-bs-toggle="tooltip" data-bs-placement="top" title="El lugar supera el 75% de su afluencia máxima habitual">
+            <i class="bi bi-people-fill me-1"></i>Alta concurrencia
+          </span>
+        }
+        @if (place.is_gaining_crowd) {
+          <span
+            class="badge-tag warning"
+            data-bs-toggle="tooltip" data-bs-placement="top" title="La afluencia aumentó más de 10 puntos en los últimos 15 minutos">
+            <i class="bi bi-graph-up me-1"></i>Aumentando
+          </span>
+        }
+      </div>
+    }
+  </div>
+</div>
