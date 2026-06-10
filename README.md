@@ -2,6 +2,22 @@
 
 Aplicación web para buscar lugares en ciudades de México y consultar su nivel de afluencia en tiempo real, basada en datos abiertos de OpenStreetMap.
 
+## Capturas
+
+### Vista principal — búsqueda, mapa y selector de horas
+
+![Vista principal](img/captura.png)
+
+Búsqueda multiselect por giro, filtrado por estado / ciudad / radio o geocerca dibujada en el mapa. Incluye recomendación de zona tranquila/activa, mejor lugar del momento y barra de horas 00–23 h para proyectar la concurrencia a cualquier hora del día.
+
+### Detalle de lugar — métricas y tiempos populares
+
+![Detalle de lugar](img/captura2.png)
+
+Al seleccionar un lugar se despliegan sus métricas (popularidad actual vs. habitual, ratio, cambio en 15 min) y la gráfica semanal de tiempos populares con la hora activa resaltada en rojo.
+
+---
+
 ## ¿Qué hace?
 
 1. El usuario selecciona uno o varios **giros** (tipo de negocio: restaurante, farmacia, gimnasio, etc.), un **estado** y opcionalmente una **ciudad** y un **radio de búsqueda**.
