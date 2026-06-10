@@ -35,36 +35,54 @@ export class AppComponent {
   loading = false;
   error: string | null = null;
 
-  // Filter / sort state
   sortKey: 'current_popularity' | 'usual_popularity' | 'crowd_ratio' | 'name' = 'current_popularity';
   filterHigh    = false;
   filterGaining = false;
 
-  // Geofence
   drawnGeofence: [number, number][] | null = null;
+  private lastRequest: SearchRequest | null = null;
 
-  // Hour selector (00–23 h)
   readonly hours = Array.from({ length: 24 }, (_, i) => i);
   selectedHour: number | null = null;
 
+  // Precomputed fields — updated explicitly to prevent repeated recomputation per CD cycle
+  highHours:          boolean[] = new Array(24).fill(false);
+  viewPlaces:         Place[] = [];
+  filteredPlaces:     Place[] = [];
+  bestPickNow:        Place | null = null;
+  zoneRecommendation: { best: QuadrantData; hot: QuadrantData } | null = null;
+
   constructor(private svc: PlacesService) {}
 
-  // ── Search ──────────────────────────────────────────────────────
+  // ── Search ──────────────────────────────────────────────────────────
 
   onSearch(req: SearchRequest) {
-    if (this.drawnGeofence?.length) {
-      req = { ...req, geofence: this.drawnGeofence };
-    }
-    this.loading      = true;
-    this.error        = null;
-    this.response     = null;
+    this.lastRequest = req;
+    const fullReq = this.drawnGeofence?.length
+      ? { ...req, geofence: this.drawnGeofence }
+      : req;
+    this._runSearch(fullReq);
+  }
+
+  private _runSearch(req: SearchRequest) {
+    this.loading       = true;
+    this.error         = null;
+    this.response      = null;
     this.selectedPlace = null;
     this.selectedHour  = null;
+    this.viewPlaces    = [];
+    this.filteredPlaces = [];
+    this.bestPickNow   = null;
+    this.zoneRecommendation = null;
 
     this.svc.search(req).subscribe({
-      next: r => { this.response = r; this.loading = false; },
+      next: r => {
+        this.response = r;
+        this.loading  = false;
+        this._recompute();
+      },
       error: e => {
-        this.error = this.parseError(e);
+        this.error   = this.parseError(e);
         this.loading = false;
       },
     });
@@ -79,14 +97,20 @@ export class AppComponent {
   }
 
   resetSearch() {
-    this.response      = null;
-    this.selectedPlace = null;
-    this.error         = null;
-    this.filterHigh    = false;
-    this.filterGaining = false;
-    this.sortKey       = 'current_popularity';
-    this.selectedHour  = null;
-    this.drawnGeofence = null;
+    this.response           = null;
+    this.selectedPlace      = null;
+    this.error              = null;
+    this.filterHigh         = false;
+    this.filterGaining      = false;
+    this.sortKey            = 'current_popularity';
+    this.selectedHour       = null;
+    this.drawnGeofence      = null;
+    this.lastRequest        = null;
+    this.highHours          = new Array(24).fill(false);
+    this.viewPlaces         = [];
+    this.filteredPlaces     = [];
+    this.bestPickNow        = null;
+    this.zoneRecommendation = null;
   }
 
   selectPlace(place: Place) {
@@ -96,44 +120,76 @@ export class AppComponent {
     }, 100);
   }
 
+  // Re-runs search filtered to drawn area; clears geofence and re-runs if removed
   onGeofenceDrawn(coords: [number, number][] | null) {
     this.drawnGeofence = coords;
+    if (!this.lastRequest) return;
+    const fullReq = coords?.length
+      ? { ...this.lastRequest, geofence: coords }
+      : this.lastRequest;
+    this._runSearch(fullReq);
   }
 
-  // ── Hour helpers ────────────────────────────────────────────────
+  // ── Hour selector ────────────────────────────────────────────────────
+
+  onSelectHour(h: number | null) {
+    this.selectedHour = h;
+    this._computeViewPlaces();
+    this._computeFiltered();
+    this._computeBestPick();
+    this._computeZoneRec();
+  }
+
+  // Called when filter toggles or sort key changes
+  onFilterChange() {
+    this._computeFiltered();
+  }
 
   fmtHour(h: number): string {
-    return h.toString().padStart(2, '0');
+    const suffix = h < 12 ? 'am' : 'pm';
+    const h12 = h % 12 || 12;
+    return `${h12}${suffix}`;
   }
 
-  isHighHourOnAvg(h: number): boolean {
-    const places = this.response?.places;
-    if (!places?.length) return false;
-    const today = new Date().getDay();
-    let sum = 0, n = 0;
-    for (const p of places) {
-      const d = p.popular_times?.find(d => d.day === today);
-      if (d?.data?.[h] !== undefined) { sum += d.data[h]; n++; }
-    }
-    return n > 0 && sum / n > 66;
-  }
-
-  // ── Selected place resolved against current viewPlaces ──────────
+  // ── Selected place resolved against cached viewPlaces ────────────────
 
   get currentSelectedPlace(): Place | null {
     if (!this.selectedPlace) return null;
     return this.viewPlaces.find(p => p.id === this.selectedPlace!.id) ?? this.selectedPlace;
   }
 
-  // ── View places (respects hour selector) ────────────────────────
+  // ── Precomputation ───────────────────────────────────────────────────
 
-  get viewPlaces(): Place[] {
-    if (!this.response?.places.length) return [];
-    if (this.selectedHour === null) return this.response.places;
+  private _recompute() {
+    this._computeHighHours();
+    this._computeViewPlaces();
+    this._computeFiltered();
+    this._computeBestPick();
+    this._computeZoneRec();
+  }
+
+  private _computeHighHours() {
+    const places = this.response?.places;
+    if (!places?.length) { this.highHours = new Array(24).fill(false); return; }
+    const today = new Date().getDay();
+    this.highHours = Array.from({ length: 24 }, (_, h) => {
+      let sum = 0, n = 0;
+      for (const p of places) {
+        const d = p.popular_times?.find(day => day.day === today);
+        if (d?.data?.[h] !== undefined) { sum += d.data[h]; n++; }
+      }
+      return n > 0 && sum / n > 66;
+    });
+  }
+
+  private _computeViewPlaces() {
+    const places = this.response?.places;
+    if (!places?.length) { this.viewPlaces = []; return; }
+    if (this.selectedHour === null) { this.viewPlaces = places; return; }
 
     const today = new Date().getDay();
     const h = this.selectedHour;
-    return this.response.places.map(p => {
+    this.viewPlaces = places.map(p => {
       const d = p.popular_times?.find(d => d.day === today);
       const val = d?.data?.[h] ?? p.current_popularity;
       const ratio = p.usual_popularity > 0
@@ -142,17 +198,15 @@ export class AppComponent {
       return {
         ...p,
         current_popularity: val,
-        crowd_ratio: ratio,
-        crowd_change: 0,
-        is_high_crowd: val > 66,
-        is_gaining_crowd: false,
+        crowd_ratio:        ratio,
+        crowd_change:       0,
+        is_high_crowd:      val > 66,
+        is_gaining_crowd:   false,
       };
     });
   }
 
-  // ── Filtered + sorted list ──────────────────────────────────────
-
-  get filteredPlaces(): Place[] {
+  private _computeFiltered() {
     let list = [...this.viewPlaces];
     if (this.filterHigh)    list = list.filter(p => p.is_high_crowd);
     if (this.filterGaining) list = list.filter(p => p.is_gaining_crowd);
@@ -161,15 +215,12 @@ export class AppComponent {
     } else {
       list.sort((a, b) => (b[this.sortKey] as number) - (a[this.sortKey] as number));
     }
-    return list;
+    this.filteredPlaces = list;
   }
 
-  // ── Zone recommendation ─────────────────────────────────────────
-
-  get bestPickNow(): Place | null {
-    if (!this.viewPlaces.length) return null;
-    return [...this.viewPlaces]
-      .filter(p => p.usual_popularity >= 40)
+  private _computeBestPick() {
+    if (!this.viewPlaces.length) { this.bestPickNow = null; return; }
+    this.bestPickNow = [...this.viewPlaces]
       .sort((a, b) => {
         const sa = a.usual_popularity * Math.max(0, 1 - a.crowd_ratio) - a.wait_time;
         const sb = b.usual_popularity * Math.max(0, 1 - b.crowd_ratio) - b.wait_time;
@@ -177,10 +228,10 @@ export class AppComponent {
       })[0] ?? null;
   }
 
-  get zoneRecommendation(): { best: QuadrantData; hot: QuadrantData } | null {
+  private _computeZoneRec() {
     const places = this.viewPlaces;
     const loc = this.response?.location;
-    if (!places?.length || !loc) return null;
+    if (!places.length || !loc) { this.zoneRecommendation = null; return; }
 
     const quads: Record<string, Place[]> = { 'Norte': [], 'Sur': [], 'Este': [], 'Oeste': [] };
     for (const p of places) {
@@ -196,14 +247,14 @@ export class AppComponent {
       .filter(([, ps]) => ps.length >= 2)
       .map(([name, ps]) => ({
         name,
-        places: ps,
+        places:        ps,
         avgCrowd:      Math.round(ps.reduce((s, p) => s + p.current_popularity, 0) / ps.length),
         lowCrowdCount: ps.filter(p => !p.is_high_crowd).length,
       }));
 
-    if (quadData.length < 2) return null;
+    if (quadData.length < 2) { this.zoneRecommendation = null; return; }
     const best = [...quadData].sort((a, b) => a.avgCrowd - b.avgCrowd)[0];
     const hot  = [...quadData].sort((a, b) => b.avgCrowd - a.avgCrowd)[0];
-    return best.name === hot.name ? null : { best, hot };
+    this.zoneRecommendation = best.name === hot.name ? null : { best, hot };
   }
 }

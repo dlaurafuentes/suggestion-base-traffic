@@ -115,19 +115,19 @@
         type="button" class="btn btn-sm"
         [class.btn-danger]="filterHigh"
         [class.btn-outline-danger]="!filterHigh"
-        (click)="filterHigh = !filterHigh">
+        (click)="filterHigh = !filterHigh; onFilterChange()">
         <i class="bi bi-people-fill me-1"></i>Alta concurrencia
       </button>
       <button
         type="button" class="btn btn-sm"
         [class.btn-warning]="filterGaining"
         [class.btn-outline-warning]="!filterGaining"
-        (click)="filterGaining = !filterGaining">
+        (click)="filterGaining = !filterGaining; onFilterChange()">
         <i class="bi bi-graph-up me-1"></i>Aumentando
       </button>
 
       <span class="small fw-semibold text-muted ms-3 me-1">Ordenar:</span>
-      <select class="form-select form-select-sm" style="width:auto" [(ngModel)]="sortKey">
+      <select class="form-select form-select-sm" style="width:auto" [(ngModel)]="sortKey" (ngModelChange)="onFilterChange()">
         <option value="current_popularity">Más ocupados ahora</option>
         <option value="usual_popularity">Más ocupados (habitual)</option>
         <option value="crowd_ratio">Mayor ratio actual/habitual</option>
@@ -141,7 +141,7 @@
         type="button"
         class="btn-hour"
         [class.active]="selectedHour === null"
-        (click)="selectedHour = null"
+        (click)="onSelectHour(null)"
         title="Ver datos actuales">
         Ahora
       </button>
@@ -150,9 +150,9 @@
           type="button"
           class="btn-hour"
           [class.active]="selectedHour === h"
-          [class.high]="isHighHourOnAvg(h)"
-          (click)="selectedHour = h"
-          [title]="fmtHour(h) + ':00 h'">
+          [class.high]="highHours[h]"
+          (click)="onSelectHour(h)"
+          [title]="fmtHour(h)">
           {{ fmtHour(h) }}
         </button>
       }

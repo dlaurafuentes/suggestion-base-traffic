@@ -1,7 +1,7 @@
 import {
   Component, Input, Output, EventEmitter,
   AfterViewInit, OnChanges, SimpleChanges,
-  ElementRef, ViewChild,
+  ElementRef, ViewChild, NgZone,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
@@ -28,6 +28,8 @@ export class ResultsMapComponent implements AfterViewInit, OnChanges {
   private markers: L.Marker[] = [];
   private radiusCircle: L.Circle | null = null;
   private prevPlaceIds: string[] = [];
+
+  constructor(private zone: NgZone) {}
 
   // ── Drawing state ────────────────────────────────────────────────
   drawingMode  = false;
@@ -67,15 +69,18 @@ export class ResultsMapComponent implements AfterViewInit, OnChanges {
     const lat = this.center?.lat ?? 19.43;
     const lng = this.center?.lng ?? -99.13;
 
-    this.map = L.map(this.mapRef.nativeElement, { zoomControl: true }).setView([lat, lng], 13);
+    // Run Leaflet outside Angular zone so zoom/pan events don't trigger change detection
+    this.zone.runOutsideAngular(() => {
+      this.map = L.map(this.mapRef.nativeElement, { zoomControl: true }).setView([lat, lng], 13);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
-      maxZoom: 19,
-    }).addTo(this.map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(this.map);
 
-    this.map.on('click', (e: L.LeafletMouseEvent) => {
-      if (this.drawingMode) this.addDrawPoint(e.latlng);
+      this.map.on('click', (e: L.LeafletMouseEvent) => {
+        if (this.drawingMode) this.zone.run(() => this.addDrawPoint(e.latlng));
+      });
     });
 
     if (this.places.length) this.renderMarkers();
@@ -88,74 +93,78 @@ export class ResultsMapComponent implements AfterViewInit, OnChanges {
     const newIds = this.places.map(p => p.id);
     const idsChanged = newIds.join(',') !== this.prevPlaceIds.join(',');
 
-    // Update popup content on existing markers when only popularity changed
-    if (!idsChanged && this.markers.length === this.places.length) {
-      this.places.forEach((place, i) => {
-        this.markers[i].setPopupContent(this.buildPopup(place));
-        const el = this.markers[i].getElement()?.querySelector('span');
-        if (el) {
-          el.textContent = `${place.current_popularity}%`;
-          const colour = this.crowdColour(place.current_popularity);
-          const pin = this.markers[i].getElement()?.querySelector('div') as HTMLElement | null;
-          if (pin) pin.style.background = colour;
-        }
-      });
-      return;
-    }
+    this.zone.runOutsideAngular(() => {
+      // Update popup content on existing markers when only popularity changed
+      if (!idsChanged && this.markers.length === this.places.length) {
+        this.places.forEach((place, i) => {
+          this.markers[i].setPopupContent(this.buildPopup(place));
+          const el = this.markers[i].getElement()?.querySelector('span');
+          if (el) {
+            el.textContent = `${place.current_popularity}%`;
+            const colour = this.crowdColour(place.current_popularity);
+            const pin = this.markers[i].getElement()?.querySelector('div') as HTMLElement | null;
+            if (pin) pin.style.background = colour;
+          }
+        });
+        return;
+      }
 
-    this.prevPlaceIds = newIds;
-    this.markers.forEach(m => m.remove());
-    this.markers = [];
+      this.prevPlaceIds = newIds;
+      this.markers.forEach(m => m.remove());
+      this.markers = [];
 
-    for (const place of this.places) {
-      const colour = this.crowdColour(place.current_popularity);
+      for (const place of this.places) {
+        const colour = this.crowdColour(place.current_popularity);
 
-      const icon = L.divIcon({
-        className: '',
-        iconSize:    [40, 40],
-        iconAnchor:  [20, 40],
-        popupAnchor: [0, -44],
-        html: `
-          <div style="
-            width:40px;height:40px;border-radius:50% 50% 50% 0;
-            background:${colour};transform:rotate(-45deg);
-            border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);
-            display:flex;align-items:center;justify-content:center;">
-            <span style="transform:rotate(45deg);color:#fff;font-size:.7rem;font-weight:700">
-              ${place.current_popularity}%
-            </span>
-          </div>`,
-      });
+        const icon = L.divIcon({
+          className: '',
+          iconSize:    [40, 40],
+          iconAnchor:  [20, 40],
+          popupAnchor: [0, -44],
+          html: `
+            <div style="
+              width:40px;height:40px;border-radius:50% 50% 50% 0;
+              background:${colour};transform:rotate(-45deg);
+              border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);
+              display:flex;align-items:center;justify-content:center;">
+              <span style="transform:rotate(45deg);color:#fff;font-size:.7rem;font-weight:700">
+                ${place.current_popularity}%
+              </span>
+            </div>`,
+        });
 
-      const marker = L.marker([place.lat, place.lng], { icon })
-        .addTo(this.map)
-        .bindPopup(this.buildPopup(place), { maxWidth: 240 });
+        const marker = L.marker([place.lat, place.lng], { icon })
+          .addTo(this.map)
+          .bindPopup(this.buildPopup(place), { maxWidth: 240 });
 
-      marker.on('click', () => this.placeSelected.emit(place));
-      this.markers.push(marker);
-    }
+        marker.on('click', () => this.zone.run(() => this.placeSelected.emit(place)));
+        this.markers.push(marker);
+      }
 
-    if (this.markers.length) {
-      const group = L.featureGroup(this.markers);
-      this.map.fitBounds(group.getBounds().pad(0.15));
-    }
+      if (this.markers.length) {
+        const group = L.featureGroup(this.markers);
+        this.map.fitBounds(group.getBounds().pad(0.15));
+      }
+    });
   }
 
   private drawRadiusCircle() {
-    if (this.radiusCircle) { this.radiusCircle.remove(); this.radiusCircle = null; }
-    if (!this.center || this.hasGeofence) return;
-    this.radiusCircle = L.circle([this.center.lat, this.center.lng], {
-      radius:      this.radio,
-      color:       '#4361ee',
-      weight:      2,
-      opacity:     0.7,
-      fillColor:   '#4361ee',
-      fillOpacity: 0.07,
-    }).addTo(this.map);
+    this.zone.runOutsideAngular(() => {
+      if (this.radiusCircle) { this.radiusCircle.remove(); this.radiusCircle = null; }
+      if (!this.center || this.hasGeofence) return;
+      this.radiusCircle = L.circle([this.center.lat, this.center.lng], {
+        radius:      this.radio,
+        color:       '#4361ee',
+        weight:      2,
+        opacity:     0.7,
+        fillColor:   '#4361ee',
+        fillOpacity: 0.07,
+      }).addTo(this.map);
+    });
   }
 
   private focusPlace(place: Place) {
-    this.map.setView([place.lat, place.lng], 16);
+    this.zone.runOutsideAngular(() => this.map.setView([place.lat, place.lng], 16));
   }
 
   // ── Geofence drawing ─────────────────────────────────────────────
